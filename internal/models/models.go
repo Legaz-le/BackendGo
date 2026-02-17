@@ -14,6 +14,7 @@ type Job struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Location    string    `json:"location"`
-	SalaryRange string    `json:"salary_range"`
+	SalaryMin   int       `json:"min_salary"`
+	SalaryMax   int       `json:"max_salary"`
 	CreatedAt   time.Time `json:"created_at"`
 }
