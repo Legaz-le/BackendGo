@@ -36,3 +36,19 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 
 	return &user, nil
 }
+
+func GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	pool := database.GetDB()
+
+	row := pool.QueryRow(ctx, "SELECT id, email, password_hash, name, role, created_at FROM users WHERE id = $1", id)
+	user := models.User{}
+
+	err := row.Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.Role, &user.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+
+}
