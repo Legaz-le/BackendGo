@@ -57,3 +57,41 @@ Three tables: `users`, `jobs`, `applications`. Jobs reference `users(employer_id
 - Bookmark routes exist in `handlers/handlers.go` but are commented out in `main.go` (legacy in-memory implementation).
 - Auth (`internal/auth/`) is implemented but not yet registered on any routes.
 - The `Job` model in `models/models.go` does not include `employer_id` or `status` — those fields exist in the DB schema but are not yet surfaced in the Go struct.
+
+---
+
+## Developer Roadmap
+
+**Goal:** Get hired as a full-stack developer (React/TypeScript + Go)
+**Timeline:** 8-10 weeks
+**Flagship Project:** This Job Board Platform
+
+### Roadmap Progress
+
+#### Week 1 — Go Fundamentals ✅ (completed)
+#### Week 2 — HTTP & REST APIs ✅ (completed)
+#### Week 3 — PostgreSQL + Database ✅ (completed)
+
+#### Week 4 — Authentication & Security (IN PROGRESS)
+- [x] Password hashing with bcrypt (`auth/service.go`)
+- [x] JWT generation + validation (`auth/jwt.go`)
+- [x] Refresh token generation + hashing (`auth/refresh.go`)
+- [x] User repository — CreateUser, GetUserByEmail (`user/repository.go`)
+- [ ] Auth HTTP handlers — register, login, refresh (`auth/handler.go`)
+- [ ] Refresh token DB repository — save/lookup/revoke
+- [ ] Auth middleware — protect routes
+- [ ] Role-based access — employer vs seeker
+- [ ] Input validation on all auth endpoints
+- [ ] Wire auth routes into `main.go`
+
+#### Week 5 — Testing & Code Quality (not started)
+#### Week 6 — Docker & Deployment (not started)
+#### Week 7-8 — Frontend React/TypeScript (not started)
+#### Week 9-10 — Portfolio Polish & Job Prep (not started)
+
+### Planned Extras (Week 9-10)
+- File upload for resumes
+- Email notifications
+- Rate limiting
+- Redis caching
+- WebSocket notifications
