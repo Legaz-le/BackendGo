@@ -35,3 +35,22 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func RequireRole(role string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claim, ok := r.Context().Value(ClaimsKey).(*auth.Claims)
+			if !ok {
+				http.Error(w, "bad request", http.StatusUnauthorized)
+				return
+			}
+
+			if claim.Role != role {
+				http.Error(w, "bad request", http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}

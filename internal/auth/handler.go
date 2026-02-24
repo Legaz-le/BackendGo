@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"example.com/mod/internal/user"
@@ -36,8 +37,14 @@ func serverError(w http.ResponseWriter, err error) {
 func Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
+
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if req.Email == "" || !strings.Contains(req.Email, "@") || len(req.Password) < 8 || req.Name == "" || (req.Role != "employer" && req.Role != "seeker") {
+		http.Error(w, "error", http.StatusBadRequest)
 		return
 	}
 	hash, err := HashPassword(req.Password)
@@ -86,6 +93,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	
+	if req.Email == "" || req.Password == "" {
+		http.Error(w, "error", http.StatusBadRequest)
 		return
 	}
 
@@ -139,6 +151,11 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	
+	if req.RefreshToken == "" {
+		http.Error(w, "error", http.StatusBadRequest)
+		return
+	}
 
 	tokenHash := HashRefreshToken(req.RefreshToken)
 
@@ -174,12 +191,12 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rawToken, tokenHash, err = GenerateRefreshToken()
-	
+
 	if err != nil {
 		serverError(w, err)
 		return
 	}
-	
+
 	_, err = SaveToken(r.Context(), foundUser.ID, tokenHash, time.Now().Add(7*24*time.Hour))
 	if err != nil {
 		serverError(w, err)

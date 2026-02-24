@@ -44,6 +44,7 @@ func main() {
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
+		r.Use(middleware.RequireRole("employer"))
 		r.Post("/jobs", handlers.PostJob)
 		r.Put("/jobs/{id}", handlers.PutJob)
 		r.Delete("/jobs/{id}", handlers.DeleteJob)
