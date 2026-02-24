@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"example.com/mod/internal/auth"
 	"example.com/mod/internal/database"
 	"example.com/mod/internal/handlers"
 	"example.com/mod/internal/middleware"
@@ -37,9 +38,16 @@ func main() {
 	// This for different handler
 	r.Get("/jobs", handlers.GetJobs)
 	r.Get("/jobs/{id}", handlers.GetJob)
-	r.Post("/jobs", handlers.PostJob)
-	r.Put("/jobs/{id}", handlers.PutJob)
-	r.Delete("/jobs/{id}", handlers.DeleteJob)
+	r.Post("/auth/register", auth.Register)
+	r.Post("/auth/login", auth.Login)
+	r.Post("/auth/refresh", auth.Refresh)
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+		r.Post("/jobs", handlers.PostJob)
+		r.Put("/jobs/{id}", handlers.PutJob)
+		r.Delete("/jobs/{id}", handlers.DeleteJob)
+	})
 
 	http.ListenAndServe(":8090", r)
 }
