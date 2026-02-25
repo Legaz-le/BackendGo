@@ -3,26 +3,26 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"example.com/mod/internal/user"
+	"github.com/go-playground/validator/v10"
 )
 
 type registerRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name"`
-	Role     string `json:"role"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
+	Name     string `json:"name" validate:"required" `
+	Role     string `json:"role" validate:"required,oneof=employer seeker"`
 }
 
 type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 type refreshRequest struct {
-	RefreshToken string `json:"refreshToken"`
+	RefreshToken string `json:"refreshToken" validate:"required"`
 }
 
 type authResponse struct {
@@ -43,8 +43,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Email == "" || !strings.Contains(req.Email, "@") || len(req.Password) < 8 || req.Name == "" || (req.Role != "employer" && req.Role != "seeker") {
-		http.Error(w, "error", http.StatusBadRequest)
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 	hash, err := HashPassword(req.Password)
@@ -95,9 +96,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	
-	if req.Email == "" || req.Password == "" {
-		http.Error(w, "error", http.StatusBadRequest)
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
@@ -151,9 +153,10 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	
-	if req.RefreshToken == "" {
-		http.Error(w, "error", http.StatusBadRequest)
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
