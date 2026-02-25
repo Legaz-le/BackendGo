@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: jobboard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5 
+  app:
+    build: .
+    ports:
+      - "8090:8090"
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/jobboard?sslmode=disable
+      JWT_SECRET: 112e5336bb10b67643f0eb02c496dd56
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres_data:

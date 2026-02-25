@@ -57,6 +57,21 @@ Three tables: `users`, `jobs`, `applications`. Jobs reference `users(employer_id
 - Bookmark routes exist in `handlers/handlers.go` but are commented out in `main.go` (legacy in-memory implementation).
 - Auth is fully implemented and wired: register, login, refresh on `/auth/*`; write job routes protected by `AuthMiddleware` + `RequireRole("employer")`.
 - The `Job` model in `models/models.go` does not include `employer_id` or `status` — those fields exist in the DB schema but are not yet surfaced in the Go struct.
+- `GET /health` endpoint wired at `handlers/job.go` — returns 200, used by Docker healthcheck.
+- Validation uses `github.com/go-playground/validator/v10` struct tags on all auth request types.
+- Docker: `Dockerfile` (multi-stage build), `docker-compose.yml` (app + postgres), `.dockerignore` all present at project root.
+
+### Docker commands
+```bash
+docker compose up --build   # start everything, rebuild app image
+docker compose down         # stop everything
+docker compose down -v      # stop and wipe DB volume
+docker compose logs -f app  # follow app logs
+
+# Apply migrations (run after first up or after down -v)
+docker compose exec -T db psql -U postgres -d jobboard < migrations/000001_init_schema.up.sql
+docker compose exec -T db psql -U postgres -d jobboard < migrations/000002_create_refresh_tokens.up.sql
+```
 
 ---
 
@@ -84,14 +99,21 @@ Three tables: `users`, `jobs`, `applications`. Jobs reference `users(employer_id
 - [x] Input validation on all auth endpoints
 - [x] Wire auth routes into `main.go`
 
-#### Week 5 — Testing & Code Quality (IN PROGRESS)
-- [ ] Unit tests — JWT, password hashing, refresh token hashing (`auth/`)
-- [ ] Handler tests — register, login, refresh with httptest
-- [ ] Middleware tests — AuthMiddleware and RequireRole
-- [ ] Job handler tests — CRUD with mock or test DB
-- [ ] Refactor validation to use `github.com/go-playground/validator/v10`
-#### Week 6 — Docker & Deployment (not started)
-#### Week 7-8 — Frontend React/TypeScript (not started)
+#### Week 5 — Testing & Code Quality ✅ (completed)
+- [x] Unit tests — JWT, password hashing, refresh token hashing (`internal/auth/auth_test.go`)
+- [x] Middleware tests — AuthMiddleware and RequireRole (`internal/middleware/middleware_test.go`)
+- [x] Refactor validation to use `github.com/go-playground/validator/v10`
+- [ ] Handler tests — register, login, refresh (deferred to Week 6, needs test DB)
+- [ ] Job handler tests — CRUD with test DB (deferred to Week 6)
+
+#### Week 6 — Docker & Deployment ✅ (completed)
+- [x] `GET /health` endpoint
+- [x] Multi-stage `Dockerfile`
+- [x] `.dockerignore`
+- [x] `docker-compose.yml` — app + postgres with healthcheck
+- [x] Migrations applied, full stack running
+
+#### Week 7-8 — Frontend React/TypeScript (IN PROGRESS)
 #### Week 9-10 — Portfolio Polish & Job Prep (not started)
 
 ### Planned Extras (Week 9-10)

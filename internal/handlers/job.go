@@ -132,3 +132,7 @@ func DeleteJob(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func HealthCheck(w http.ResponseWriter, r *http.Request) {
+      w.WriteHeader(http.StatusOK)
+  }
