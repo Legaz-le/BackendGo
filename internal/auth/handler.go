@@ -21,15 +21,6 @@ type loginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type refreshRequest struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
-}
-
-type authResponse struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-}
-
 func serverError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
@@ -83,9 +74,21 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(authResponse{AccessToken: accessToken, RefreshToken: rawToken})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   15 * 60,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    rawToken,
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60 * 60,
+	})
+	w.WriteHeader(http.StatusOK)
 
 }
 
@@ -137,30 +140,35 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   15 * 60,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    rawToken,
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60 * 60,
+	})
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(authResponse{AccessToken: accessToken, RefreshToken: rawToken})
 
 }
 
 func Refresh(w http.ResponseWriter, r *http.Request) {
-	var req refreshRequest
 	var rawToken string
 
-	err := json.NewDecoder(r.Body).Decode(&req)
-
+	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
-	}
+	tokenHash := HashRefreshToken(cookie.Value)
 
-	tokenHash := HashRefreshToken(req.RefreshToken)
 
 	getTokenHash, err := GetRefreshTokenByHash(r.Context(), tokenHash)
 
@@ -206,7 +214,19 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   15 * 60,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    rawToken,
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60 * 60,
+	})
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(authResponse{AccessToken: accessToken, RefreshToken: rawToken})
 }

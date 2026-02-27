@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 
 type LoginCredentials = {
   email: string;
@@ -9,14 +10,21 @@ type LoginCredentials = {
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const navigation = useNavigate();
+
   const mutation = useMutation({
+    onSuccess: () => {
+      navigation({ to: "/jobs" });
+    },
     mutationFn: (credentials: LoginCredentials) =>
       fetch("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
-      }).then((res) => res.json()),
+      })
   });
+  
   return (
     <form
       onSubmit={(e) => {

@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"example.com/mod/internal/auth"
 )
@@ -14,14 +13,12 @@ const ClaimsKey contextKey = "claims"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		header := r.Header.Get("Authorization")
-		bearerCheck := strings.HasPrefix(header, "Bearer ")
-
-		if !bearerCheck {
+		cookie, err := r.Cookie("access_token")
+		if err != nil {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		token := strings.TrimPrefix(header, "Bearer ")
+		token := cookie.Value
 
 		check, err := auth.ValidateAccessToken(token)
 
