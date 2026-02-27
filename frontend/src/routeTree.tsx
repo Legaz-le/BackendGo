@@ -1,8 +1,23 @@
-import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  Outlet,
+  Link,
+} from "@tanstack/react-router";
 import JobsPage from "./routes/jobs";
+import LoginPage from "./routes/login";
 
 const rootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/jobs">Jobs</Link>
+        <Link to="/login">Login</Link>
+      </nav>
+      <Outlet />
+    </>
+  ),
 });
 
 const indexRoute = createRoute({
@@ -14,7 +29,17 @@ const indexRoute = createRoute({
 const indexJob = createRoute({
   getParentRoute: () => rootRoute,
   path: "/jobs",
-  component: JobsPage
-})
+  component: JobsPage,
+});
 
-export const routeTree = rootRoute.addChildren([indexRoute, indexJob]);
+const indexLogin = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: LoginPage,
+});
+
+export const routeTree = rootRoute.addChildren([
+  indexRoute,
+  indexJob,
+  indexLogin,
+]);
