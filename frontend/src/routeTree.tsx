@@ -1,4 +1,5 @@
 import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
+import JobsPage from "./routes/jobs";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -10,4 +11,10 @@ const indexRoute = createRoute({
   component: () => <div>Job Board</div>,
 });
 
-export const routeTree = rootRoute.addChildren([indexRoute]);
+const indexJob = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/jobs",
+  component: JobsPage
+})
+
+export const routeTree = rootRoute.addChildren([indexRoute, indexJob]);
