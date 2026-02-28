@@ -37,57 +37,84 @@ const PostPage = () => {
       }),
   });
 
-  if (query.isLoading) return <div>Loading...</div>;
+  if (query.isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   if (query.isError) {
     navigation({ to: "/login" });
     return null;
   }
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        mutate.mutate({
-          title,
-          location,
-          description,
-          min_salary: minSalary,
-          max_salary: maxSalary,
-        });
-      }}
-    >
-      <label>Title</label>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <label>Description</label>
-      <input
-        type="text"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <label>Location</label>
-      <input
-        type="text"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-      />
-      <label>Min_Salary</label>
-      <input
-        type="number"
-        value={minSalary}
-        onChange={(e) => setMinSalary(Number(e.target.value))}
-      />
-      <label>Max_Salary</label>
-      <input
-        type="number"
-        value={maxSalary}
-        onChange={(e) => setMaxSalary(Number(e.target.value))}
-      />
-      <button type="submit">Post</button>
-    </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form
+        className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
+        onSubmit={(e) => {
+          e.preventDefault();
+          mutate.mutate({
+            title,
+            location,
+            description,
+            min_salary: minSalary,
+            max_salary: maxSalary,
+          });
+        }}
+      >
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Post a Job</h2>
+
+        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
+          className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+        <input
+          type="text"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Min Salary</label>
+            <input
+              type="number"
+              value={minSalary}
+              onChange={(e) => setMinSalary(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Max Salary</label>
+            <input
+              type="number"
+              value={maxSalary}
+              onChange={(e) => setMaxSalary(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={mutate.isPending}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium transition-colors disabled:opacity-50"
+        >
+          {mutate.isPending ? "Posting..." : "Post Job"}
+        </button>
+      </form>
+    </div>
   );
 };
 

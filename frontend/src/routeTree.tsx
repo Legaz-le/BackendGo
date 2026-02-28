@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
 import JobsPage from "./routes/jobs";
 import LoginPage from "./routes/login";
 import PostPage from "./routes/post-job";
+import HomePage from "./routes/home";
 import Navbar from "./components/Navbar";
 
 const rootRoute = createRootRoute({
@@ -16,7 +17,7 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => <div>Job Board</div>,
+  component: HomePage,
 });
 
 const indexJob = createRoute({
