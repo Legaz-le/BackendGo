@@ -169,7 +169,6 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 
 	tokenHash := HashRefreshToken(cookie.Value)
 
-
 	getTokenHash, err := GetRefreshTokenByHash(r.Context(), tokenHash)
 
 	if err != nil {
@@ -229,4 +228,22 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   7 * 24 * 60 * 60,
 	})
 	w.WriteHeader(http.StatusOK)
+}
+
+func Me(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("access_token")
+
+	if err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	
+	claims, err := ValidateAccessToken(cookie.Value)
+	
+	if err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(claims)
 }

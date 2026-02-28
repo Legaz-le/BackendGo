@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
 type PostType = {
@@ -17,6 +17,12 @@ const PostPage = () => {
   const [minSalary, setMinSalary] = useState(0);
   const [maxSalary, setMaxSalary] = useState(0);
 
+  const query = useQuery({
+    queryKey: ["me"],
+    queryFn: () => fetch("/auth/me").then((res) => res.json()),
+    retry: false,
+  });
+
   const navigation = useNavigate();
 
   const mutate = useMutation({
@@ -30,11 +36,24 @@ const PostPage = () => {
         body: JSON.stringify(credentials),
       }),
   });
+
+  if (query.isLoading) return <div>Loading...</div>;
+
+  if (query.isError) {
+    navigation({ to: "/login" });
+    return null;
+  }
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        mutate.mutate({ title, location, description, min_salary: minSalary, max_salary: maxSalary  });
+        mutate.mutate({
+          title,
+          location,
+          description,
+          min_salary: minSalary,
+          max_salary: maxSalary,
+        });
       }}
     >
       <label>Title</label>
@@ -72,5 +91,4 @@ const PostPage = () => {
   );
 };
 
-
-export default PostPage
+export default PostPage;
