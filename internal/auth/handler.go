@@ -237,13 +237,30 @@ func Me(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	
+
 	claims, err := ValidateAccessToken(cookie.Value)
-	
+
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(claims)
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "access_token",
+		Value:  "",
+		MaxAge: -1,
+		Path:   "/",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:   "refresh_token",
+		Value:  "",
+		MaxAge: -1,
+		Path:   "/",
+	})
+	w.WriteHeader(http.StatusOK)
+
 }

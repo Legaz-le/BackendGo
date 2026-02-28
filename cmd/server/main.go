@@ -43,6 +43,7 @@ func main() {
 	r.Post("/auth/refresh", auth.Refresh)
 	r.Get("/health", handlers.HealthCheck)
 	r.Get("/auth/me", auth.Me)
+	r.Post("/auth/logout", auth.Logout)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
