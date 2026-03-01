@@ -43,7 +43,7 @@ func TestAuthMiddleware(t *testing.T) {
 	}
 
 	req3 := httptest.NewRequest(http.MethodGet, "/", nil)
-	req3.Header.Set("Authorization", "Bearer "+token)
+	req3.AddCookie(&http.Cookie{Name: "access_token", Value: token})
 	rr3 := httptest.NewRecorder()
 	handler.ServeHTTP(rr3, req3)
 	if rr3.Code != http.StatusOK {
