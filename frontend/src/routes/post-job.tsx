@@ -34,10 +34,17 @@ const PostPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Invalid credentials");
       }),
   });
 
-  if (query.isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (query.isLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
 
   if (query.isError) {
     navigation({ to: "/login" });
@@ -61,7 +68,9 @@ const PostPage = () => {
       >
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Post a Job</h2>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Title
+        </label>
         <input
           type="text"
           value={title}
@@ -69,7 +78,9 @@ const PostPage = () => {
           className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -77,7 +88,9 @@ const PostPage = () => {
           className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Location
+        </label>
         <input
           type="text"
           value={location}
@@ -87,7 +100,9 @@ const PostPage = () => {
 
         <div className="flex gap-4 mb-6">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Salary</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Min Salary
+            </label>
             <input
               type="number"
               value={minSalary}
@@ -96,7 +111,9 @@ const PostPage = () => {
             />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Salary</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max Salary
+            </label>
             <input
               type="number"
               value={maxSalary}
@@ -113,6 +130,11 @@ const PostPage = () => {
         >
           {mutate.isPending ? "Posting..." : "Post Job"}
         </button>
+        {mutate.isError && (
+          <p className="text-red-500 text-sm mt-2">
+            Something went wrong. Please try again.
+          </p>
+        )}
       </form>
     </div>
   );

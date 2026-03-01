@@ -26,6 +26,8 @@ const RegisterPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Invalid credentials");
       }),
   });
 
@@ -84,6 +86,11 @@ const RegisterPage = () => {
         >
           {mutation.isPending ? "Registering..." : "Register"}
         </button>
+        {mutation.isError && (
+          <p className="text-red-500 text-sm mt-2">
+            Something went wrong. Please try again.
+          </p>
+        )}
       </form>
     </div>
   );
