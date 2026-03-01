@@ -21,6 +21,9 @@ const Navbar = () => {
       <Link className="hover:text-blue-400 transition-colors" to="/post-job">
         Post Job
       </Link>
+      <Link className="hover:text-blue-400 transition-colors" to="/register">
+        Register
+      </Link>
       <button
         className="ml-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition-colors"
         onClick={handleLogout}

@@ -4,6 +4,8 @@ import LoginPage from "./routes/login";
 import PostPage from "./routes/post-job";
 import HomePage from "./routes/home";
 import Navbar from "./components/Navbar";
+import RegisterPage from "./routes/register";
+import JobDetailPage from "./routes/job-detail";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -38,9 +40,23 @@ const indexPost = createRoute({
   component: PostPage,
 });
 
+const indexRegister = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/register",
+  component: RegisterPage
+})
+
+const indexJobId = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/jobs/$id",
+  component: JobDetailPage
+})
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   indexJob,
   indexLogin,
   indexPost,
+  indexRegister,
+  indexJobId,
 ]);

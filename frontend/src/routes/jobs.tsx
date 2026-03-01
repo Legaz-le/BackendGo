@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 type JobType = {
   id: number;
@@ -31,8 +32,8 @@ const JobsPage = () => {
           <div className="text-center text-gray-500 py-20">No jobs available yet.</div>
         )}
         {data && data.map((item: JobType) => (
+          <Link key={item.id} to={`/jobs/${item.id}`}>
           <div
-            key={item.id}
             className="bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl p-6 mb-4 border border-gray-200"
           >
             <div className="flex items-start justify-between">
@@ -46,7 +47,8 @@ const JobsPage = () => {
               <span>📍</span>
               <span>{item.location}</span>
             </div>
-          </div>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
