@@ -1,17 +1,28 @@
-package user
+package postgres
 
 import (
 	"context"
 
-	"example.com/mod/internal/models"
+	"example.com/mod/internal/domain"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func CreateUser(ctx context.Context, email, passwordHash, name, role string) (*models.User, error) {
-	pool := database.GetDB()
+type PostgresUserRepository struct {
+	db *pgxpool.Pool
+}
+
+func NewPostgresUserRepository(db *pgxpool.Pool) *PostgresUserRepository {
+	return &PostgresUserRepository{db: db}
+}
+
+
+
+func (r *PostgresUserRepository) Create(ctx context.Context, email, passwordHash, name, role string) (*domain.User, error) {
+	pool := r.db
 
 	row := pool.QueryRow(ctx, "INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, password_hash, email, name, role, created_at",
 		email, passwordHash, name, role)
-	user := models.User{}
+	user := domain.User{}
 	err := row.Scan(&user.ID, &user.PasswordHash, &user.Email, &user.Name, &user.Role, &user.CreatedAt)
 
 	if err != nil {
@@ -22,11 +33,11 @@ func CreateUser(ctx context.Context, email, passwordHash, name, role string) (*m
 
 }
 
-func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	pool := database.GetDB()
+func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	pool := r.db
 
 	row := pool.QueryRow(ctx, "SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = $1", email)
-	user := models.User{}
+	user := domain.User{}
 	err := row.Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.Role, &user.CreatedAt)
 
 	if err != nil {
@@ -36,11 +47,11 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return &user, nil
 }
 
-func GetUserByID(ctx context.Context, id int) (*models.User, error) {
-	pool := database.GetDB()
+func (r *PostgresUserRepository) GetByID(ctx context.Context, id int) (*domain.User, error) {
+	pool := r.db
 
 	row := pool.QueryRow(ctx, "SELECT id, email, password_hash, name, role, created_at FROM users WHERE id = $1", id)
-	user := models.User{}
+	user := domain.User{}
 
 	err := row.Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.Role, &user.CreatedAt)
 
