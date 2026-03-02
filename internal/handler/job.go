@@ -1,44 +1,53 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 	"strconv"
 
-	"example.com/mod/internal/models"
+	"example.com/mod/internal/domain"
+	"example.com/mod/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 
-func GetJobs(w http.ResponseWriter, r *http.Request) {
+type JobHandler struct {
+	service *service.JobService
+}
+
+func NewJobHandler(service *service.JobService) *JobHandler {
+	return &JobHandler{service: service}
+}
+
+func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	location := r.URL.Query().Get("location")
 	minSalaryStr := r.URL.Query().Get("salary_min")
 	maxSalaryStr := r.URL.Query().Get("salary_max")
-	
+
 	minSalary := 0
 	maxSalary := 0
-	
+
 	if minSalaryStr != "" {
 		if val, err := strconv.Atoi(minSalaryStr); err == nil {
 			minSalary = val
 		}
 	}
-	
+
 	if maxSalaryStr != "" {
 		if val, err := strconv.Atoi(maxSalaryStr); err == nil {
 			maxSalary = val
 		}
 	}
-	
-	var jobs []models.Job
+
+	var jobs []domain.Job
 	var err error
-	
+
 	if location != "" || minSalary > 0 || maxSalary > 0 {
-		jobs, err = models.GetJobsWithFilter(ctx, location, minSalary, maxSalary)
+		jobs, err = h.service.GetWithFilter(ctx, location, minSalary, maxSalary)
 	} else {
-		jobs, err = models.GetAllJobs(ctx)
+		jobs, err = h.service.GetAll(ctx)
 	}
-	
+
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -47,14 +56,14 @@ func GetJobs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(jobs)
 }
 
-func GetJob(w http.ResponseWriter, r *http.Request) {
+func (h *JobHandler) GetJob(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	newId, err := strconv.Atoi(id)
 	if err != nil {
 		http.Error(w, "Invalid job ID", http.StatusBadRequest)
 		return
 	}
-	job, err := models.GetJobByID(r.Context(), newId)
+	job, err := h.service.GetByID(r.Context(), newId)
 	if err != nil {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
@@ -64,8 +73,8 @@ func GetJob(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func PostJob(w http.ResponseWriter, r *http.Request) {
-	var job models.Job
+func (h *JobHandler) PostJob(w http.ResponseWriter, r *http.Request) {
+	var job domain.Job
 	ctx := r.Context()
 	if err := json.NewDecoder(r.Body).Decode(&job); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -76,7 +85,7 @@ func PostJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing required fields: title, description, location", http.StatusBadRequest)
 		return
 	}
-	newJob, err := models.CreateJob(ctx, job)
+	newJob, err := h.service.Create(ctx, job)
 	if err != nil {
 		http.Error(w, "Failed to create job", http.StatusInternalServerError)
 		return
@@ -85,7 +94,7 @@ func PostJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newJob)
 }
 
-func PutJob(w http.ResponseWriter, r *http.Request) {
+func (h *JobHandler) PutJob(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	jobID, err := strconv.Atoi(id)
 	if err != nil {
@@ -93,7 +102,7 @@ func PutJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var job models.Job
+	var job domain.Job
 	ctx := r.Context()
 	if err := json.NewDecoder(r.Body).Decode(&job); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -105,7 +114,7 @@ func PutJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedJob, err := models.UpdateJob(ctx, jobID, job)
+	updatedJob, err := h.service.Update(ctx, jobID, job)
 	if err != nil {
 		http.Error(w, "Job not found or update failed", http.StatusNotFound)
 		return
@@ -115,7 +124,7 @@ func PutJob(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedJob)
 }
 
-func DeleteJob(w http.ResponseWriter, r *http.Request) {
+func (h *JobHandler) DeleteJob(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	jobID, err := strconv.Atoi(id)
 	if err != nil {
@@ -124,7 +133,7 @@ func DeleteJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	err = models.DeleteJob(ctx, jobID)
+	err = h.service.Delete(ctx, jobID)
 	if err != nil {
 		http.Error(w, "Job not found", http.StatusNotFound)
 		return
@@ -134,5 +143,5 @@ func DeleteJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
-      w.WriteHeader(http.StatusOK)
-  }
+	w.WriteHeader(http.StatusOK)
+}

@@ -6,8 +6,10 @@ import (
 
 	"example.com/mod/internal/auth"
 	"example.com/mod/internal/database"
-	"example.com/mod/internal/handlers"
+	"example.com/mod/internal/handler"
 	"example.com/mod/internal/middleware"
+	"example.com/mod/internal/postgres"
+	"example.com/mod/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 )
@@ -18,40 +20,38 @@ func main() {
 		log.Println(".env file not found, using system environment")
 	}
 
-	error := database.Connection()
-	if error != nil {
-		log.Fatal(error)
+	err = database.Connection()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	defer database.CloseConnection()
+	
+	pool := database.GetDB()
+	jobRepo := postgres.NewPostgresJobRepository(pool)
+	JobService := service.NewJobService(jobRepo)
+	JobHandler := handler.NewJobHandler(JobService)
+	
 
 	r := chi.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
 
-	// r.Get("/bookmarks", handlers.GetBooks)
-	// r.Post("/bookmarks", handlers.PostBooks)
-
-	// r.Get("/bookmarks/{id}", handlers.GetOneBookmark)
-	// r.Put("/bookmarks/{id}", handlers.UpdateBookmark)
-	// r.Delete("/bookmarks/{id}", handlers.DeleteBookmark)
-
-	// This for different handler
-	r.Get("/jobs", handlers.GetJobs)
-	r.Get("/jobs/{id}", handlers.GetJob)
+	r.Get("/jobs", JobHandler.GetJobs)
+	r.Get("/jobs/{id}", JobHandler.GetJob)
 	r.Post("/auth/register", auth.Register)
 	r.Post("/auth/login", auth.Login)
 	r.Post("/auth/refresh", auth.Refresh)
-	r.Get("/health", handlers.HealthCheck)
+	r.Get("/health", handler.HealthCheck)
 	r.Get("/auth/me", auth.Me)
 	r.Post("/auth/logout", auth.Logout)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
 		r.Use(middleware.RequireRole("employer"))
-		r.Post("/jobs", handlers.PostJob)
-		r.Put("/jobs/{id}", handlers.PutJob)
-		r.Delete("/jobs/{id}", handlers.DeleteJob)
+		r.Post("/jobs", JobHandler.PostJob)
+		r.Put("/jobs/{id}", JobHandler.PutJob)
+		r.Delete("/jobs/{id}", JobHandler.DeleteJob)
 	})
 
-	http.ListenAndServe(":8090", r)
+	log.Fatal(http.ListenAndServe(":8090", r))
 }
