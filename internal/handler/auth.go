@@ -1,13 +1,21 @@
-package auth
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
-	"example.com/mod/internal/user"
+	"example.com/mod/internal/service"
 	"github.com/go-playground/validator/v10"
+	"example.com/mod/internal/auth"
 )
+
+type AuthHandler struct {
+	service *service.AuthService
+}
+
+func NewAuthHandler(service *service.AuthService) *AuthHandler {
+	return &AuthHandler{service: service}
+}
 
 type registerRequest struct {
 	Email    string `json:"email" validate:"required,email"`
@@ -25,7 +33,7 @@ func serverError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 
@@ -39,35 +47,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	hash, err := HashPassword(req.Password)
 
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	createUser, err := user.CreateUser(r.Context(), req.Email, hash, req.Name, req.Role)
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	accessToken, err := GenerateAccessToken(createUser.ID, createUser.Role)
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	rawToken, tokenHash, err := GenerateRefreshToken()
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	_, err = SaveToken(r.Context(), createUser.ID, tokenHash, time.Now().Add(7*24*time.Hour))
+	_, accessToken, rawToken, err := h.service.Register(r.Context(), req.Email, req.Password, req.Name, req.Role)
 
 	if err != nil {
 		serverError(w, err)
@@ -92,7 +73,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -106,37 +87,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundUser, err := user.GetUserByEmail(r.Context(), req.Email)
+	_, accessToken, rawToken, err := h.service.Login(r.Context(), req.Email, req.Password)
 
 	if err != nil {
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
-		return
-	}
-	err = CheckPasswordHash(req.Password, foundUser.PasswordHash)
-
-	if err != nil {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
-		return
-	}
-
-	accessToken, err := GenerateAccessToken(foundUser.ID, foundUser.Role)
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	rawToken, tokenHash, err := GenerateRefreshToken()
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	_, err = SaveToken(r.Context(), foundUser.ID, tokenHash, time.Now().Add(7*24*time.Hour))
-
-	if err != nil {
-		serverError(w, err)
 		return
 	}
 
@@ -158,56 +112,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func Refresh(w http.ResponseWriter, r *http.Request) {
-	var rawToken string
-
+func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("refresh_token")
 	if err != nil {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	tokenHash := HashRefreshToken(cookie.Value)
+	tokenHash := auth.HashRefreshToken(cookie.Value)
 
-	getTokenHash, err := GetRefreshTokenByHash(r.Context(), tokenHash)
+	_, accessToken, rawToken, err := h.service.Refresh(r.Context(), tokenHash)
 
-	if err != nil {
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return
-	}
-	if getTokenHash.ExpiresAt.Before(time.Now()) {
-		http.Error(w, "token expired", http.StatusUnauthorized)
-		return
-	}
-
-	err = DeleteRefreshToken(r.Context(), tokenHash)
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	foundUser, err := user.GetUserByID(r.Context(), getTokenHash.UserID)
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	accessToken, err := GenerateAccessToken(foundUser.ID, foundUser.Role)
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	rawToken, tokenHash, err = GenerateRefreshToken()
-
-	if err != nil {
-		serverError(w, err)
-		return
-	}
-
-	_, err = SaveToken(r.Context(), foundUser.ID, tokenHash, time.Now().Add(7*24*time.Hour))
 	if err != nil {
 		serverError(w, err)
 		return
@@ -230,7 +145,7 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func Me(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("access_token")
 
 	if err != nil {
@@ -238,7 +153,7 @@ func Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, err := ValidateAccessToken(cookie.Value)
+	claims, err := auth.ValidateAccessToken(cookie.Value)
 
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -248,7 +163,7 @@ func Me(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(claims)
 }
 
-func Logout(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:   "access_token",
 		Value:  "",

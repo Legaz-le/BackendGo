@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/mod/internal/auth"
 	"example.com/mod/internal/database"
 	"example.com/mod/internal/handler"
 	"example.com/mod/internal/middleware"
@@ -26,24 +25,27 @@ func main() {
 	}
 
 	defer database.CloseConnection()
-	
+
 	pool := database.GetDB()
 	jobRepo := postgres.NewPostgresJobRepository(pool)
+	userRepo := postgres.NewPostgresUserRepository(pool)
+	authRepo := postgres.NewPostgresAuthRepository(pool)
+	authService := service.NewAuthService(userRepo, authRepo)
+	authHandler := handler.NewAuthHandler(authService)
 	JobService := service.NewJobService(jobRepo)
 	JobHandler := handler.NewJobHandler(JobService)
-	
 
 	r := chi.NewRouter()
 	r.Use(middleware.LoggingMiddleware)
 
 	r.Get("/jobs", JobHandler.GetJobs)
 	r.Get("/jobs/{id}", JobHandler.GetJob)
-	r.Post("/auth/register", auth.Register)
-	r.Post("/auth/login", auth.Login)
-	r.Post("/auth/refresh", auth.Refresh)
+	r.Post("/auth/register", authHandler.Register)
+	r.Post("/auth/login", authHandler.Login)
+	r.Post("/auth/refresh", authHandler.Refresh)
 	r.Get("/health", handler.HealthCheck)
-	r.Get("/auth/me", auth.Me)
-	r.Post("/auth/logout", auth.Logout)
+	r.Get("/auth/me", authHandler.Me)
+	r.Post("/auth/logout", authHandler.Logout)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware)
