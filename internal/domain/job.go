@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type Job struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
@@ -13,4 +12,11 @@ type Job struct {
 	SalaryMin   int       `json:"min_salary"`
 	SalaryMax   int       `json:"max_salary"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+type PaginatedJobs struct {
+	Data  []Job `json:"data"`
+	Page  int       `json:"page"`
+	Limit int       `json:"limit"`
+	Total int       `json:"total"`
 }

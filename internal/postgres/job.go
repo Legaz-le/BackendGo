@@ -161,3 +161,36 @@ func (r *PostgresJobRepository) GetWithFilter(ctx context.Context, location stri
 	return jobs, nil
 
 }
+
+func (r *PostgresJobRepository) GetPaginated(ctx context.Context, page, limit int) (*domain.PaginatedJobs, error) {
+
+	offset := (page - 1) * limit
+
+	var total int
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM jobs").Scan(&total)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Query(ctx, "SELECT id, title, description, location, salary_min, salary_max, created_at FROM jobs LIMIT $1 OFFSET $2", limit, offset)
+	
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []domain.Job
+	for rows.Next() {
+		job := domain.Job{}
+		if err := rows.Scan(&job.ID, &job.Title, &job.Description, &job.Location, &job.SalaryMin, &job.SalaryMax, &job.CreatedAt); err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+		
+	}
+	
+	return &domain.PaginatedJobs{Data: jobs, Page: page, Limit: limit, Total: total}, nil
+}

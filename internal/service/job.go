@@ -29,10 +29,14 @@ func (s *JobService) Create(ctx context.Context, job domain.Job) (*domain.Job, e
 func (s *JobService) Update(ctx context.Context, id int, job domain.Job) (*domain.Job, error) {
 	return s.repo.Update(ctx, id, job)
 }
-func (s *JobService) Delete(ctx context.Context, id int)  error {
+func (s *JobService) Delete(ctx context.Context, id int) error {
 	return s.repo.Delete(ctx, id)
-	
+
 }
 func (s *JobService) GetWithFilter(ctx context.Context, location string, minSalary int, maxSalary int) ([]domain.Job, error) {
 	return s.repo.GetWithFilter(ctx, location, minSalary, maxSalary)
+}
+
+func (s *JobService) GetPaginated(ctx context.Context, page, limit int) (*domain.PaginatedJobs, error) {
+	return s.repo.GetPaginated(ctx, page, limit)
 }

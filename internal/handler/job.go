@@ -20,6 +20,32 @@ func NewJobHandler(service *service.JobService) *JobHandler {
 
 func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+	if pageStr != "" || limitStr != "" {
+		page := 1
+		limit := 10
+
+		if pageStr != "" {
+			if val, err := strconv.Atoi(pageStr); err == nil && val > 0 {
+				page = val
+			}
+		}
+		if limitStr != "" {
+			if val, err := strconv.Atoi(limitStr); err == nil && val > 0 {
+				limit = val
+			}
+		}
+		result, err := h.service.GetPaginated(ctx, page, limit)
+		if err != nil {
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(result)
+		return
+	}
+
 	location := r.URL.Query().Get("location")
 	minSalaryStr := r.URL.Query().Get("salary_min")
 	maxSalaryStr := r.URL.Query().Get("salary_max")
@@ -57,8 +83,11 @@ func (h *JobHandler) GetJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *JobHandler) GetJob(w http.ResponseWriter, r *http.Request) {
+
 	id := chi.URLParam(r, "id")
+
 	newId, err := strconv.Atoi(id)
+
 	if err != nil {
 		http.Error(w, "Invalid job ID", http.StatusBadRequest)
 		return
